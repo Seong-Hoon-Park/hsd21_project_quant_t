@@ -88,7 +88,7 @@ void quantize(const float* input, char* quantized, int num_input, int bits_min, 
     else if(quant < bits_min)
       quant = bits_min;
     
-    quantized[i] = quant; // TODO: convert floating point to quantized value
+    quantized[i] = quant - offset; // TODO: convert floating point to quantized value
   }
 }
 
@@ -149,7 +149,7 @@ const float* FPGA::blockMM(Compute* comp)
       for(int j = 0; j < v_size_; ++j){
         qout_M[v_size_*i+j] = 0;
         for(int k = 0; k < v_size_; ++k){
-          qout_M[v_size_*i+j] += (qm1[v_size_*i+k] - weight_offset) * (qm2[v_size_*k + j] - act_offset);
+          qout_M[v_size_*i+j] += (qm1[v_size_*i+k]) * (qm2[v_size_*k + j]);
         }
       }
     }
@@ -221,7 +221,7 @@ const float *FPGA::blockMV(Compute* comp)
     {
       qout_[i] = 0;
       for (int j = 0; j < v_size_; ++j)
-        qout_[i] += (qvec_[j]-act_offset) * (qmat_[v_size_ * i + j]-weight_offset);
+        qout_[i] += (qvec_[j]) * (qmat_[v_size_ * i + j]);
     }
 
     dequantize(qout_, out, m_size_, 0, act_scale * weight_scale); // TODO complete dequantize function

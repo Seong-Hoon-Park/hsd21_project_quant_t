@@ -1,5 +1,5 @@
 CPP = g++ -fsigned-char
-CPPFLAGS = -std=c++11
+CPPFLAGS = -std=c++11 -O3
 PROTO = ./proto
 SRC = ./src
 BUILD = ./build
