@@ -132,6 +132,48 @@ const int *__attribute__((optimize("O0"))) FPGA::qblockMM(Compute* comp)
 {
   num_block_call_ += 1;
 
+  float* m1 = this->matrix_M1();
+  float* m2 = this->matrix_M2();
+  char* qm1 = reinterpret_cast<char*>(qm1_);
+  char* qm2 = reinterpret_cast<char*>(qm2_);
+
+  if(comp->quantized)
+  {
+    char act_bits_min = 0;
+    char act_bits_max = (1<<(comp->act_bits-1))-1;
+
+    float act_min = m2[0];
+    float act_max = m2[0];
+    for(int i=0; i<v_size_*v_size_; i++){
+      if(m2[i] < act_min)
+        act_min = m2[i];
+      else if(m2[i] > act_max)
+        act_max = m2[i];
+    }
+    float act_scale = (act_max - act_min) / 127; // TODO calculate the scale factor
+    char act_offset = (char) ceil(-act_min / act_scale); // TODO calculate the zero-offset
+    quantize(m2, qm2, v_size_*v_size_, act_bits_min, act_bits_max, act_offset, act_scale); // TODO complete quantize function
+
+    char weight_bits_min = 0;
+    char weight_bits_max = (1<<(comp->weight_bits-1))-1;
+
+    float weight_min = m1[0];
+    float weight_max = m1[0];
+    for(int i=0; i<v_size_*v_size_; i++){
+      if(m1[i] < weight_min)
+        weight_min = m1[i];
+      else if(m1[i] > weight_max)
+        weight_max = m1[i];
+    }
+    float weight_scale = (weight_max - weight_min) / 127; // TODO calculate the scale factor
+    char weight_offset = (char) ceil(-weight_min / weight_scale); // TODO calculate the zero-offset
+    quantize(m1, qm1, v_size_*v_size_, weight_bits_min, weight_bits_max, weight_offset, weight_scale); // TODO complete quantize function
+
+    //float output_scale = act_scale * weight_scale;
+    //dequantize(qout_M, out, v_size_*v_size_, 0, output_scale); // TODO complete dequantize function
+
+  }
+
   // fpga version
   *output_ = 0x5555;
   while (*output_ == 0x5555)
